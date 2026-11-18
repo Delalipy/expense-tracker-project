@@ -129,3 +129,108 @@ bubble_sort(items):
 
 To search by keyword, the program checks each expense one by one and keeps the ones whose note or category contains the keyword. Upper and lower case are ignored, so `tesco` finds `Tesco`.
 
+## 6. Saving the data (FR-08, FR-09)
+
+Both files are CSV files, so they can be opened in Excel.
+
+**`expenses.csv`**: one row per expense
+
+```
+amount,date,category,note
+12.5,16/11/2026,Food,Lunch
+2.0,16/11/2026,Transport,Bus
+```
+
+**`budgets.csv`**: one row per month
+
+```
+month,amount
+11/2026,750.0
+```
+
+- Every add, edit and delete saves straight away, so nothing is lost if the program closes.
+- If a file does not exist yet, the program starts with an empty list (FR-09).
+- A broken row in a file is skipped instead of crashing the program (NFR-06).
+- Both files are listed in `.gitignore`, because they contain personal data, not code.
+
+## 7. Checking input (FR-02 to FR-04, NFR-02)
+
+All the checks are in `ExpenseTracker`, so both versions check input in the same way.
+
+| Input | Rule | Message if wrong |
+|---|---|---|
+| Amount | A number above 0 and up to £100,000. `£` and commas are allowed. Rounded to 2 decimal places. | "That is not a number. Try again, e.g. 12.50" |
+| Date | A real date in DD/MM/YYYY, from 01/01/2000 | "Not a real date. Use DD/MM/YYYY, e.g. 16/11/2026" |
+| Category | One of the six categories, in any capitals | "Please choose one of the categories listed." |
+| Budget | A number above 0 | "The budget must be a number above 0." |
+| Menu choice | One of the menu numbers | "Please enter a number from the menu." |
+
+**Edge cases (decided after testing in `playground.py`)**
+
+- Amounts are rounded to 2 decimal places, so totals always add up in pounds and pence.
+- The maximum amount is £100,000, to catch typing mistakes. `1,250` is accepted as 1250.
+- Dates before 01/01/2000 are rejected as likely typos. Future dates are allowed, for planned bills.
+- Categories are not case-sensitive: `food` is saved as `Food`.
+- Notes may contain commas; the `csv` module keeps them in one column.
+
+When a rule is broken, the tracker raises a `ValueError` with the message. The text version prints it and asks again. The GUI shows it in a pop-up box. The program never crashes on bad input.
+
+## 8. Text version (`cli.py`)
+
+The menu repeats until the user chooses 0.
+
+```
+===== EXPENSE TRACKER =====
+1. Add an expense
+2. View all expenses
+3. Edit an expense
+4. Delete an expense
+5. Search and filter
+6. Sort expenses
+7. Monthly budget and summary
+0. Exit
+Choose an option:
+```
+
+Expenses are shown in a numbered table. The number is used to choose which one to edit or delete:
+
+```
+ #  Date        Category   Amount   Note
+ 1  16/11/2026  Food       £12.50   Lunch
+ 2  16/11/2026  Transport  £2.00    Bus
+ Total: £14.50
+```
+
+## 9. GUI version (`gui.py`)
+
+One window with three parts:
+
+```
++------------------------------------------------------------+
+| Amount [    ]  Date [          ]  Category [Food v]  Note [   ] |
+| [Add]  [Save changes]  [Delete]                            |
++------------------------------------------------------------+
+| Search [      ]  Category [All v]  Month [All v]  Sort [Date v] |
++------------------------------------------------------------+
+|  Date        Category   Amount   Note                      |
+|  16/11/2026  Food       £12.50   Lunch                     |
+|  16/11/2026  Transport  £2.00    Bus                       |
++------------------------------------------------------------+
+| Month [11/2026]  Budget £[750] [Set]                       |
+| Spent £14.50 · Left £735.50 · OK                           |
+| Food £12.50 · Transport £2.00                              |
++------------------------------------------------------------+
+```
+
+- **Top:** the form for adding and editing. Clicking a row in the table fills the form, so it can be changed or deleted.
+- **Middle:** search, filter and sort, plus the table of expenses.
+- **Bottom:** the monthly budget, how much is left, and totals per category.
+
+Errors appear in a pop-up box, so the user knows what to fix.
+
+## 10. Testing
+
+- **Unit tests** (`test_tracker.py`, using `unittest`) check the core: input checks, adding, editing, deleting, saving and loading, searching, bubble sort (compared with Python's `sorted()`), totals and budgets.
+- Tests use a temporary file, so they never change my real data.
+- **Manual tests** for the text version and the GUI are recorded in a table: requirement number, what I typed, what should happen, and what did happen.
+- Run all the unit tests with: `python -m unittest`
