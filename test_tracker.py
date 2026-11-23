@@ -1,4 +1,4 @@
-"""test_manager.py - Unit tests for the shared core."""
+"""test_tracker.py - Unit tests for the shared core."""
 
 import unittest
 from expense import Expense
@@ -97,5 +97,32 @@ class TestAddEditDelete(unittest.TestCase):
             with self.assertRaises(ValueError):
                 self.tracker.delete_expense(bad)
 
+
+class TestSearch(unittest.TestCase):
+    """Tests for search and filter (FR-10, FR-11)."""
+
+    def setUp(self):
+        self.tracker = ExpenseTracker()
+        self.tracker.add_expense("12.50", "16/11/2026", "Food", "Tesco lunch")
+        self.tracker.add_expense("2", "16/11/2026", "Transport", "Bus")
+        self.tracker.add_expense("30", "03/10/2026", "Food", "Aldi")
+
+    def test_nothing_given_returns_all(self):
+        self.assertEqual(len(self.tracker.search()), 3)
+
+    def test_by_category(self):
+        self.assertEqual(len(self.tracker.search(category="food")), 2)
+
+    def test_by_month(self):
+        self.assertEqual(len(self.tracker.search(month="11/2026")), 2)
+
+    def test_by_category_and_month(self):
+        results = self.tracker.search(category="Food", month="11/2026")
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].note, "Tesco lunch")
+
+    def test_keyword_any_capitals(self):
+        results = self.tracker.search(keyword="TESCO")
+        self.assertEqual(len(results), 1)
 if __name__ == "__main__":
     unittest.main()
