@@ -97,3 +97,25 @@ class ExpenseTracker:
         for expense in expenses:
             total = total + expense.amount
         return round(total, 2)
+        
+            # ---------- Search and filter (FR-10, FR-11) ----------
+
+    def search(self, category="", month="", keyword=""):
+        """Return the expenses that match. Leave a box empty to ignore it.
+
+        category -- e.g. "Food" (capitals do not matter)
+        month    -- e.g. "11/2026"
+        keyword  -- a word to find in the note or category, e.g. "tesco"
+        """
+        results = []
+        for expense in self.expenses:
+            if category and expense.category.lower() != category.strip().lower():
+                continue  # wrong category, skip it
+            if month and expense.date[3:] != month.strip():
+                continue  # wrong month, skip it
+            if keyword:
+                word = keyword.strip().lower()
+                if word not in expense.note.lower() and word not in expense.category.lower():
+                    continue  # keyword not found, skip it
+            results.append(expense)
+        return results
