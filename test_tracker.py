@@ -124,5 +124,34 @@ class TestSearch(unittest.TestCase):
     def test_keyword_any_capitals(self):
         results = self.tracker.search(keyword="TESCO")
         self.assertEqual(len(results), 1)
+class TestSort(unittest.TestCase):
+    """Tests for bubble sort (FR-12)."""
+
+    def setUp(self):
+        self.tracker = ExpenseTracker()
+        self.tracker.add_expense("30", "03/10/2026", "Food", "Aldi")
+        self.tracker.add_expense("2", "16/11/2026", "Transport", "Bus")
+        self.tracker.add_expense("12.50", "01/02/2025", "Food", "Tesco")
+
+    def test_sort_by_amount(self):
+        amounts = [e.amount for e in self.tracker.sort_by("amount")]
+        self.assertEqual(amounts, [2.0, 12.5, 30.0])
+
+    def test_sort_by_date_checks_year_first(self):
+        dates = [e.date for e in self.tracker.sort_by("date")]
+        self.assertEqual(dates, ["01/02/2025", "03/10/2026", "16/11/2026"])
+
+    def test_same_result_as_python_sorted(self):
+        expected = sorted(e.amount for e in self.tracker.expenses)
+        amounts = [e.amount for e in self.tracker.sort_by("amount")]
+        self.assertEqual(amounts, expected)
+
+    def test_empty_list(self):
+        self.assertEqual(ExpenseTracker().sort_by("date"), [])
+
+    def test_bad_field(self):
+        with self.assertRaises(ValueError):
+            self.tracker.sort_by("colour")
+
 if __name__ == "__main__":
     unittest.main()
