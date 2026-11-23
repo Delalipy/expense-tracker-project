@@ -97,7 +97,7 @@ class ExpenseTracker:
         for expense in expenses:
             total = total + expense.amount
         return round(total, 2)
-        
+
             # ---------- Search and filter (FR-10, FR-11) ----------
 
     def search(self, category="", month="", keyword=""):
@@ -119,3 +119,46 @@ class ExpenseTracker:
                     continue  # keyword not found, skip it
             results.append(expense)
         return results
+
+    # ---------- Sorting (FR-12) ----------
+
+    def sort_key(self, expense, field):
+        """Return the value used to compare two expenses when sorting."""
+        if field == "amount":
+            return expense.amount
+        day, month, year = expense.date.split("/")
+        return (int(year), int(month), int(day))  # year first, so dates sort correctly
+
+    def sort_by(self, field="date"):
+        """Sort the expenses by "date" or "amount" using bubble sort (smallest first)."""
+        if field not in ("date", "amount"):
+            raise ValueError("You can only sort by date or amount.")
+        items = self.expenses
+        n = len(items)
+        for i in range(n - 1):
+            swapped = False
+            for j in range(n - 1 - i):
+                if self.sort_key(items[j], field) > self.sort_key(items[j + 1], field):
+                    items[j], items[j + 1] = items[j + 1], items[j]  # swap the pair
+                    swapped = True
+            if not swapped:
+                break  # nothing moved, so the list is already sorted
+        return items
+
+        # ---------- Category totals (FR-15) ----------
+
+    def totals_by_category(self, month=""):
+        """Add up the spending for each category. Give a month (MM/YYYY) to count only that month."""
+        totals = {}  # a dictionary, e.g. {"Food": 42.5, "Transport": 2.0}
+        for expense in self.search(month=month):
+            if expense.category in totals:
+                totals[expense.category] = totals[expense.category] + expense.amount
+            else:
+                totals[expense.category] = expense.amount
+        for category in totals:
+            totals[category] = round(totals[category], 2)
+        return totals
+
+
+
+    
