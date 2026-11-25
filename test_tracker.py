@@ -153,5 +153,73 @@ class TestSort(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.tracker.sort_by("colour")
 
+class TestCategoryTotals(unittest.TestCase):
+    """Tests for category totals (FR-15)."""
+
+    def setUp(self):
+        self.tracker = ExpenseTracker()
+        self.tracker.add_expense("12.50", "16/11/2026", "Food", "Tesco")
+        self.tracker.add_expense("30", "17/11/2026", "Food", "Aldi")
+        self.tracker.add_expense("2", "16/11/2026", "Transport", "Bus")
+        self.tracker.add_expense("100", "03/10/2026", "Bills", "Electric")
+
+    def test_all_months(self):
+        totals = self.tracker.totals_by_category()
+        self.assertEqual(totals, {"Food": 42.5, "Transport": 2.0, "Bills": 100.0})
+
+    def test_one_month(self):
+        totals = self.tracker.totals_by_category("11/2026")
+        self.assertEqual(totals, {"Food": 42.5, "Transport": 2.0})
+
+    def test_month_with_no_expenses(self):
+        self.assertEqual(self.tracker.totals_by_category("01/2026"), {})
+
+    def test_totals_add_up_to_overall_total(self):
+        totals = self.tracker.totals_by_category()
+        self.assertEqual(round(sum(totals.values()), 2), self.tracker.total())
+
+
+class TestBudget(unittest.TestCase):
+    """Tests for budgets and budget status (FR-13, FR-14)."""
+
+    def setUp(self):
+        self.tracker = ExpenseTracker()
+        self.tracker.set_budget("11/2026", "100")
+
+    def test_set_budget_saved_in_dictionary(self):
+        self.assertEqual(self.tracker.budgets, {"11/2026": 100.0})
+
+    def test_month_without_leading_zero(self):
+        self.tracker.set_budget("1/2026", "50")
+        self.assertIn("01/2026", self.tracker.budgets)
+
+    def test_bad_month(self):
+        with self.assertRaises(ValueError):
+            self.tracker.set_budget("13/2026", "100")
+
+    def test_status_ok(self):
+        self.tracker.add_expense("50", "16/11/2026", "Food")
+        result = self.tracker.budget_status("11/2026")
+        self.assertEqual(result["status"], "OK")
+        self.assertEqual(result["left"], 50.0)
+
+    def test_status_warning_at_80_percent(self):
+        self.tracker.add_expense("80", "16/11/2026", "Food")
+        self.assertEqual(self.tracker.budget_status("11/2026")["status"], "WARNING")
+
+    def test_status_over(self):
+        self.tracker.add_expense("120", "16/11/2026", "Rent")
+        result = self.tracker.budget_status("11/2026")
+        self.assertEqual(result["status"], "OVER")
+        self.assertEqual(result["left"], -20.0)
+
+    def test_other_months_not_counted(self):
+        self.tracker.add_expense("500", "16/10/2026", "Rent")
+        self.assertEqual(self.tracker.budget_status("11/2026")["spent"], 0)
+
+    def test_no_budget_set(self):
+        with self.assertRaises(ValueError):
+            self.tracker.budget_status("12/2026")
+
 if __name__ == "__main__":
     unittest.main()
