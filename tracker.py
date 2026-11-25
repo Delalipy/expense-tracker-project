@@ -158,7 +158,38 @@ class ExpenseTracker:
         for category in totals:
             totals[category] = round(totals[category], 2)
         return totals
+    # ---------- Budget (FR-13, FR-14) ----------
 
+    def check_month(self, text):
+        """Check the month is real and in MM/YYYY, e.g. 11/2026."""
+        try:
+            month = datetime.strptime(text.strip(), "%m/%Y")
+        except ValueError:
+            raise ValueError("Not a real month. Use MM/YYYY, e.g. 11/2026")
+        return month.strftime("%m/%Y")  # turns 1/2026 into 01/2026
+
+    def set_budget(self, month, amount):
+        """Save a spending limit for one month in the budgets dictionary."""
+        month = self.check_month(month)
+        self.budgets[month] = self.check_amount(amount)
+        return self.budgets[month]
+
+    def budget_status(self, month):
+        """Compare the month's spending with its budget: OK, WARNING or OVER."""
+        month = self.check_month(month)
+        if month not in self.budgets:
+            raise ValueError(f"No budget set for {month}.")
+        budget = self.budgets[month]
+        spent = self.total(self.search(month=month))
+        percent = spent / budget * 100
+        if percent > 100:
+            status = "OVER"
+        elif percent >= 80:
+            status = "WARNING"
+        else:
+            status = "OK"
+        return {"budget": budget, "spent": spent,
+                "left": round(budget - spent, 2), "status": status}
 
 
     
