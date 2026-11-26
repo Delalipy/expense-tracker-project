@@ -3,7 +3,7 @@
 This file has no input() or print(), so it can be tested on its own (NFR-03).
 """
 
-from datetime import datetime
+from datetime import date, datetime
 from expense import Expense
 
 CATEGORIES = ["Food", "Transport", "Rent", "Bills", "Shopping", "Other"]
@@ -43,7 +43,7 @@ class ExpenseTracker:
             raise ValueError("Not a real date. Use DD/MM/YYYY, e.g. 16/11/2026")
         if date < EARLIEST_DATE:
             raise ValueError("Date must be on or after 01/01/2000.")
-        return text
+        return date.strftime("%d/%m/%Y")  # fixing date. turns 12/3/2009 into 12/03/2009
 
     def check_category(self, text):
         """Check the category is one of the six. Capitals do not matter."""
