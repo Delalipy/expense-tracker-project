@@ -221,5 +221,19 @@ class TestBudget(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.tracker.budget_status("12/2026")
 
+class TestDateFix(unittest.TestCase):
+    """Dates typed without zeros are stored with them (found while testing the GUI)."""
+
+    def test_date_gets_leading_zeros(self):
+        tracker = ExpenseTracker()
+        expense = tracker.add_expense("120", "12/3/2009", "Bills")
+        self.assertEqual(expense.date, "12/03/2009")
+
+    def test_short_date_found_by_month_search(self):
+        tracker = ExpenseTracker()
+        tracker.add_expense("120", "12/3/2009", "Bills")
+        self.assertEqual(len(tracker.search(month="03/2009")), 1)
+
+
 if __name__ == "__main__":
     unittest.main()
