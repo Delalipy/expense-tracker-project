@@ -3,8 +3,45 @@
 import unittest
 from expense import Expense
 from tracker import ExpenseTracker
+import os
+import tempfile
+import storage
 
+class TestStorage(unittest.TestCase):
+    """Tests for saving and loading CSV files (FR-08, FR-09)."""
 
+    def setUp(self):
+        folder = tempfile.mkdtemp()  # a throwaway folder, so real files are not touched
+        self.expense_file = os.path.join(folder, "expenses.csv")
+        self.budget_file = os.path.join(folder, "budgets.csv")
+
+    def test_save_then_load_expenses(self):
+        expenses = [Expense(12.5, "16/11/2026", "Food", "Tesco"),
+                    Expense(2.0, "17/11/2026", "Transport", "")]
+        storage.save_expenses(expenses, self.expense_file)
+        loaded = storage.load_expenses(self.expense_file)
+        self.assertEqual([e.to_list() for e in loaded], [e.to_list() for e in expenses])
+
+    def test_missing_file_gives_empty_list(self):
+        self.assertEqual(storage.load_expenses(self.expense_file), [])
+
+    def test_broken_rows_are_skipped(self):
+        with open(self.expense_file, "w", encoding="utf-8") as file:
+            file.write("amount,date,category,note\n")
+            file.write("abc,16/11/2026,Food,bad amount\n")
+            file.write("5,16/11/2026\n")
+            file.write("3,16/11/2026,Food,good row\n")
+        loaded = storage.load_expenses(self.expense_file)
+        self.assertEqual(len(loaded), 1)
+        self.assertEqual(loaded[0].note, "good row")
+
+    def test_save_then_load_budgets(self):
+        storage.save_budgets({"11/2026": 750.0}, self.budget_file)
+        self.assertEqual(storage.load_budgets(self.budget_file), {"11/2026": 750.0})
+
+    def test_note_with_comma_survives(self):
+        storage.save_expenses([Expense(4.0, "16/11/2026", "Food", "milk, bread")], self.expense_file)
+        self.assertEqual(storage.load_expenses(self.expense_file)[0].note, "milk, bread")
 class TestExpense(unittest.TestCase):
     """Tests for the Expense class (FR-01)."""
 
